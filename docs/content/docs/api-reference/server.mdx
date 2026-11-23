@@ -285,6 +285,8 @@ Persist only the new turn — not the full `messages` array — or items will be
 
 A tool call is stored only together with its result, so a turn stopped mid tool call is saved without that call and the thread stays valid for the next request.
 
+To store a turn as one of your users, and check the conversation is theirs, pass these items to [`openui.conversations.items.create`](/docs/gateway/conversations-from-server) with their `userId`.
+
 ### `storeChatCompletionHistory(options)`
 
 ```ts

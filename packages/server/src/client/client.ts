@@ -1,11 +1,13 @@
 import type { ExecutionContext } from "../tools/types";
 import { createCloudApi, type CloudApi } from "./api";
 import { createArtifacts } from "./artifacts";
+import { createConversations } from "./conversations";
 import { defineDashboard } from "./dashboard";
 import { createFrontendToken } from "./frontend-token";
 import {
   OpenUIApiError,
   type Artifacts,
+  type Conversations,
   type CreateFrontendTokenParams,
   type Dashboard,
   type DashboardOptions,
@@ -27,6 +29,12 @@ export class OpenUIClient {
    */
   readonly artifacts: Artifacts;
 
+  /**
+   * Your users' conversations and their items. Without `userId`, calls cover every user
+   * in your org; with it, they act as that user.
+   */
+  readonly conversations: Conversations;
+
   constructor(options: OpenUIClientOptions = {}) {
     if (
       options.appId !== undefined &&
@@ -36,6 +44,7 @@ export class OpenUIClient {
     }
     this.api = createCloudApi(options);
     this.artifacts = createArtifacts(this.api);
+    this.conversations = createConversations(this.api);
   }
 
   /** Defines live dashboards from your library and data tools; its `interpreter` runs them. */

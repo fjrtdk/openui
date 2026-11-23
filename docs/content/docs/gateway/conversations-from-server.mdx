@@ -1,0 +1,123 @@
+---
+title: Manage conversations from your server
+description: Create, read, and store conversation turns on your server with openui.conversations, as one of your users or as your org.
+---
+
+`openui.conversations` reads and writes conversations with your API key, as one of your users or as your org. Use it in a server route or a background job: for example, to check a thread is the signed-in user's and store each new turn, without minting a [frontend token](/docs/gateway/authentication#frontend-tokens).
+
+```ts title="lib/openui.ts"
+import { OpenUIClient } from "@openuidev/server";
+
+// Reads THESYS_API_KEY. Pass appId when one key serves several apps.
+export const openui = new OpenUIClient();
+```
+
+```ts title="app/api/chat/route.ts"
+import { chatCompletionMessagesToItems } from "@openuidev/server/openai";
+import { getSession } from "@/lib/auth"; // your session lookup
+import { openui } from "@/lib/openui";
+
+export async function POST(request: Request) {
+  const session = await getSession(request);
+  if (!session) return new Response("Unauthorized", { status: 401 });
+  const userId = session.user.id;
+  const { conversationId, message } = await request.json();
+
+  // A thread id from the browser: reading it as the user 404s unless it's theirs.
+  const conversation = conversationId
+    ? await openui.conversations.get(conversationId, { userId })
+    : await openui.conversations.create({ title: message.slice(0, 60) }, { userId });
+
+  const reply = await runYourModel(conversation.id, message); // your model call
+
+  // Store only the new turn: earlier items are already there.
+  await openui.conversations.items.create(
+    conversation.id,
+    chatCompletionMessagesToItems([
+      { role: "user", content: message },
+      { role: "assistant", content: reply },
+    ]),
+    { userId },
+  );
+  return Response.json({ conversationId: conversation.id, reply });
+}
+```
+
+## Act as a user or as your org
+
+Every call takes an optional `userId`:
+
+| `userId`    | The call acts as | It can                                                                                                  |
+| ----------- | ---------------- | ------------------------------------------------------------------------------------------------------- |
+| Omitted     | Your org         | Read, update, and delete every user's conversations.                                                    |
+| A user's id | That user        | Do what their [frontend token](/docs/gateway/authentication#frontend-tokens) can, on their own threads. |
+
+The client also sends its `appId`, so the call stays in that user's app, as their frontend token does.
+
+`create` always needs a `userId`. The conversation belongs to that user, so their frontend token can read it too: one made without an owner is visible only to your API key. For a background job with no signed-in user, pass an id of your own, such as `"system"`.
+
+<Callout type="warn">
+  Take `userId` from your session, never from the browser's query string or request body, or anyone
+  could read another user's conversations. And pass it whenever the conversation id came from the
+  browser: without it, the call runs as your org and reads any thread in it.
+</Callout>
+
+## Methods
+
+| Method                                                      | Description                                           |
+| ----------------------------------------------------------- | ----------------------------------------------------- |
+| `list(params?)`                                             | One page of conversations, newest first.              |
+| `create({ title?, metadata? }, { userId })`                 | A new conversation for that user.                     |
+| `get(id, options?)`                                         | One conversation.                                     |
+| `update(id, { title?, metadata? }, options?)`               | Renames it, replaces its metadata, or both.           |
+| `delete(id, options?)`                                      | Deletes it. A deleted conversation can't be restored. |
+| `items.list(id, params?)`                                   | One page of its items, newest first.                  |
+| `items.create(id, items, options?)`                         | Adds items in order, and returns them as stored.      |
+| `items.get(id, itemId, options?)`                           | One item.                                             |
+| `items.update(id, itemId, { content?, status? }, options?)` | Changes an item's content or status.                  |
+
+`options` takes `userId` and a `signal` that cancels the call. `list` and `items.list` take them in `params`, with `limit` (1 to 100, default 100), and `after` or `before` for the page after `lastId` or before `firstId`. `items.list` also takes `order: "asc"` to read a thread from its start.
+
+`list` and `items.list` return `{ data, hasMore, firstId, lastId }`. To read a whole thread, pass `lastId` back as `after`:
+
+```ts
+const thread = [];
+let after: string | undefined;
+do {
+  const page = await openui.conversations.items.list(id, { userId, order: "asc", after });
+  thread.push(...page.data);
+  after = page.hasMore ? page.lastId : undefined;
+} while (after);
+```
+
+## The conversation
+
+| Field             | Description                                                        |
+| ----------------- | ------------------------------------------------------------------ |
+| `id`              | `conv_…`.                                                          |
+| `title`           | The title, if it has one.                                          |
+| `metadata`        | Up to 16 string pairs: keys up to 64 characters, values up to 512. |
+| `userId`, `appId` | The user it belongs to, and their app.                             |
+| `createdAt`       | Unix milliseconds.                                                 |
+
+## Items
+
+Items keep the [Conversations API](/docs/gateway/api/conversations) shape: snake_case fields and `created_at` in unix seconds. An item read back can be added to another conversation as is. Narrow on `type`:
+
+| `type`                 | Fields                                                                           |
+| ---------------------- | -------------------------------------------------------------------------------- |
+| `message`              | `role` and `content`: a string, or parts such as `{ type: "input_text", text }`. |
+| `function_call`        | `call_id`, `name`, and `arguments`, a JSON string.                               |
+| `function_call_output` | `call_id` and `output`.                                                          |
+
+`chatCompletionMessagesToItems()` from `@openuidev/server/openai` turns Chat Completions messages into items. System messages can't be stored: they're instructions, not history. `items.create` takes up to 100 items, and makes no call for none.
+
+## Errors
+
+A failed call throws `OpenUIApiError`, with a `code` and the HTTP `status`.
+
+| Status | `code`          | When                                                              |
+| ------ | --------------- | ----------------------------------------------------------------- |
+| 404    | `http_error`    | The conversation or item doesn't exist, or the user can't see it. |
+| 400    | `invalid_input` | A missing or bad `userId` or id.                                  |
+| 400    | `http_error`    | OpenUI Cloud rejected an item, such as a system message.          |
