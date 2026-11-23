@@ -11,7 +11,8 @@ import type {
   ResponseInputItem,
   ResponseInputMessageContentList,
 } from "openai/resources/responses/responses";
-import { THESYS_API_BASE_URL } from "../shared/constants.js";
+import { createCloudApi } from "../client/api.js";
+import { createConversations } from "../client/conversations.js";
 import type { StoreChatCompletionHistoryOptions } from "./types.js";
 
 function userContentOf(
@@ -139,16 +140,9 @@ export function chatCompletionMessagesToItems(
   return items;
 }
 
-const EMPTY_ITEM_LIST: ConversationItemList = {
-  object: "list",
-  data: [],
-  first_id: "",
-  last_id: "",
-  has_more: false,
-};
-
 /**
- * POST Chat Completions messages as Conversations API items.
+ * Add Chat Completions messages to a conversation as Conversations API items, with the
+ * API key as your org: `chatCompletionMessagesToItems()`, then `openui.conversations.items.create()`.
  *
  * Call this after a turn (typically the new user message plus
  * the assembled assistant reply) so OpenUI Cloud storage can
@@ -156,33 +150,27 @@ const EMPTY_ITEM_LIST: ConversationItemList = {
  *
  * The conversation must already exist — AgentInterface's Cloud storage
  * creates it via `POST /v1/conversations`. Pass only the new turn, not the
- * full replay, or items will be duplicated.
+ * full replay, or items will be duplicated. A rejected write throws `OpenUIApiError`.
  */
 export async function storeChatCompletionHistory(
   options: StoreChatCompletionHistoryOptions,
 ): Promise<ConversationItemList> {
-  const items = chatCompletionMessagesToItems(options.messages);
-  if (items.length === 0) {
-    return EMPTY_ITEM_LIST;
-  }
-
-  const base = (options.apiBaseUrl ?? THESYS_API_BASE_URL).replace(/\/+$/, "");
-  const fetchFn = options.fetch ?? (globalThis.fetch as typeof fetch);
-  const res = await fetchFn(
-    `${base}/v1/conversations/${encodeURIComponent(options.conversationId)}/items`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${options.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ items }),
-    },
+  const conversations = createConversations(
+    createCloudApi({
+      apiKey: options.apiKey,
+      baseUrl: options.apiBaseUrl,
+      fetch: options.fetch as typeof globalThis.fetch | undefined,
+    }),
   );
-
-  if (!res.ok) {
-    throw new Error(`store chat completion history failed: ${res.status} ${await res.text()}`);
-  }
-
-  return (await res.json()) as ConversationItemList;
+  const data = await conversations.items.create(
+    options.conversationId,
+    chatCompletionMessagesToItems(options.messages),
+  );
+  return {
+    object: "list",
+    data: data as ConversationItemList["data"],
+    first_id: data[0]?.id ?? "",
+    last_id: data[data.length - 1]?.id ?? "",
+    has_more: false,
+  };
 }

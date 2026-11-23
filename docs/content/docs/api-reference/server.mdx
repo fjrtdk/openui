@@ -312,6 +312,8 @@ function storeChatCompletionHistory(options: {
 }): Promise<ConversationItemList>;
 ```
 
+It stores with `openui.conversations.items.create` as your org, so a failed write throws `OpenUIApiError` with a `code` and the HTTP `status`.
+
 ### `chatCompletionMessagesToItems(messages)`
 
 Convert Chat Completions messages to Conversations API items without posting.
