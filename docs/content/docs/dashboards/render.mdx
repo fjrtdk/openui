@@ -37,7 +37,7 @@ The renderer must sit inside [`OpenUICloudProvider`](/docs/dashboards/authentica
 | `isOpen`, `onOpenChange`, `defaultOpen` | Control whether the dashboard is open from its card.                                                                                                                                                                                             |
 | `actions`                               | Buttons in the open dashboard's bar, next to the close button.                                                                                                                                                                                   |
 | `onError`                               | Receives rendering, query, and loading errors.                                                                                                                                                                                                   |
-| `pollInterval`                          | How often the open dashboard checks for edits and access changes, in ms (at least 3s). `false`: never. Default: `OpenUICloudProvider`'s `pollInterval`, else 30s. See [Share dashboards](/docs/dashboards/sharing#open-dashboards-stay-current). |
+| `pollInterval`                          | How often the open dashboard checks for edits and access changes, in ms (at least 3s). `false`: never. |
 | `className`                             | Added to the root element.                                                                                                                                                                                                                       |
 
 ## Layouts
@@ -106,7 +106,7 @@ Each part of the renderer is a slot, passed as a child. A slot can be left out t
 | `Preview`                                                                     | Preview | The card that opens the dashboard.                                                                                         |
 | `PreviewTitle`, `PreviewDescription`, `PreviewLoader`                         | Preview | The card's parts.                                                                                                          |
 | `Chrome`                                                                      | Chrome  | The frame around the open dashboard: a bar, then the content.                                                              |
-| `ChromeTitle`, `ChromeLoader`, `EditedNotice`, `ChromeActions`, `CloseButton` | Chrome  | The bar's parts. `EditedNotice` says "Edited just now" for a few seconds after a newer version replaces the one on screen. |
+| `ChromeTitle`, `ChromeLoader`, `EditedNotice`, `ChromeActions`, `CloseButton` | Chrome  | The bar's parts.  |
 | `Content`                                                                     | Chrome  | The dashboard itself.                                                                                                      |
 | `Pending`, `Loading`, `Error`                                                 | Content | Shown only before the dashboard has content, while it loads, or after it fails, even with custom children.                 |
 
