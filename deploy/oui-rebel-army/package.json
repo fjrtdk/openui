@@ -1,0 +1,54 @@
+{
+  "name": "oui-rebel-army",
+  "version": "0.2.0",
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@openuidev/lang-core",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
+  },
+  "scripts": {
+    "generate": "openui generate src/lib/library.ts --spec --out src/generated/spec.json",
+    "predev": "npm run generate",
+    "dev": "next dev",
+    "prebuild": "npm run generate",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.2.5",
+    "@langchain/langgraph": "^1.4.9",
+    "@langchain/openai": "^1.5.6",
+    "@openuidev/intelligent-ui-library": "0.0.3",
+    "@openuidev/lang-core": "1.1.1",
+    "@openuidev/react-lang": "^1.1.1",
+    "@openuidev/react-ui": "^0.18.12",
+    "langchain": "^1.5.5",
+    "next": "^16.3.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zod": "^4.4.3",
+    "@excalidraw/excalidraw": "^0.18.1"
+  },
+  "devDependencies": {
+    "@openuidev/cli": "0.6.3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
+  },
+  "allowScripts": {
+    "@openuidev/lang-core": true,
+    "sharp": true,
+    "unrs-resolver": true
+  }
+}
