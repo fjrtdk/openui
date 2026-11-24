@@ -43,6 +43,13 @@ describe("POST /api/chat model allowlist", () => {
     expect(getGraph).not.toHaveBeenCalled();
   });
 
+  it("caps message count, body size and message shape", async () => {
+    expect((await post({ messages: Array.from({ length: 201 }, () => ({})) })).status).toBe(413);
+    expect((await post({ messages: [{ type: "human", content: "x".repeat(5 * 1024 * 1024) }] })).status).toBe(413);
+    expect((await post({ messages: ["hi"] })).status).toBe(400);
+    expect(getGraph).not.toHaveBeenCalled();
+  });
+
   it("rejects a bad body", async () => {
     expect((await post("not json")).status).toBe(400);
     expect((await post({ model: "kiro/claude-haiku-4.5" })).status).toBe(400);

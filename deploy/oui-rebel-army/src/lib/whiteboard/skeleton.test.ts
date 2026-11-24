@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_WHITEBOARD_ELEMENTS, toSkeletons } from "./skeleton";
+import { MAX_WHITEBOARD_ELEMENTS, MAX_WHITEBOARD_TEXT, toSkeletons } from "./skeleton";
 
 describe("toSkeletons", () => {
   it("maps shapes with labels and colors", () => {
@@ -34,5 +34,7 @@ describe("toSkeletons", () => {
     const many = Array.from({ length: 1000 }, () => ({ type: "text" as const, x: 0, y: 0 }));
     expect(toSkeletons(many)).toHaveLength(MAX_WHITEBOARD_ELEMENTS);
     expect(toSkeletons(undefined)).toEqual([]);
+    const [long] = toSkeletons([{ type: "text", x: 0, y: 0, text: "x".repeat(10_000) }]);
+    expect(long!.text).toHaveLength(MAX_WHITEBOARD_TEXT);
   });
 });

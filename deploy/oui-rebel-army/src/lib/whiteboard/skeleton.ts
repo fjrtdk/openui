@@ -19,6 +19,10 @@ export interface SkeletonElement {
 }
 
 export const MAX_WHITEBOARD_ELEMENTS = 300;
+export const MAX_WHITEBOARD_TEXT = 500;
+
+const clip = (t: string | undefined): string | undefined =>
+  typeof t === "string" ? t.slice(0, MAX_WHITEBOARD_TEXT) : undefined;
 
 const finite = (n: unknown, fallback: number): number =>
   typeof n === "number" && Number.isFinite(n) ? n : fallback;
@@ -33,6 +37,7 @@ export function toSkeletons(elements: readonly WhiteboardElement[] | undefined):
   const out: SkeletonElement[] = [];
   for (const el of elements.slice(0, MAX_WHITEBOARD_ELEMENTS)) {
     if (!el || typeof el !== "object") continue;
+    const text = clip(el.text);
     const x = finite(el.x, 0);
     const y = finite(el.y, 0);
     const colors = {
@@ -41,7 +46,7 @@ export function toSkeletons(elements: readonly WhiteboardElement[] | undefined):
     };
     switch (el.type) {
       case "text":
-        out.push({ type: "text", x, y, text: el.text ?? "", ...colors });
+        out.push({ type: "text", x, y, text: text ?? "", ...colors });
         break;
       case "arrow":
       case "line": {
@@ -55,7 +60,7 @@ export function toSkeletons(elements: readonly WhiteboardElement[] | undefined):
             [0, 0],
             [dx, dy],
           ],
-          ...(el.text ? { label: { text: el.text } } : {}),
+          ...(text ? { label: { text } } : {}),
           ...colors,
         });
         break;
@@ -69,7 +74,7 @@ export function toSkeletons(elements: readonly WhiteboardElement[] | undefined):
           y,
           width: Math.max(1, finite(el.width, 160)),
           height: Math.max(1, finite(el.height, 80)),
-          ...(el.text ? { label: { text: el.text } } : {}),
+          ...(text ? { label: { text } } : {}),
           ...colors,
         });
         break;

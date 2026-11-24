@@ -29,14 +29,19 @@ export function usePersistedModel(
     setModel(readPersistedModel(models, defaultModel));
   }, [models, defaultModel]);
 
-  const selectModel = useCallback((next: string) => {
-    setModel(next);
-    try {
-      window.localStorage.setItem(MODEL_STORAGE_KEY, next);
-    } catch {
-      // Ignore storage failures (private mode, quota, disabled storage).
-    }
-  }, []);
+  const selectModel = useCallback(
+    (next: string) => {
+      // Only ids the server allows; the route enforces this again.
+      if (!models.includes(next)) return;
+      setModel(next);
+      try {
+        window.localStorage.setItem(MODEL_STORAGE_KEY, next);
+      } catch {
+        // Ignore storage failures (private mode, quota, disabled storage).
+      }
+    },
+    [models],
+  );
 
   return [model, selectModel] as const;
 }

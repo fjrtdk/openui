@@ -18,15 +18,17 @@ function WhiteboardView({
   title?: string;
   height?: number;
 }) {
-  // Re-key on content so a streamed answer redraws once the list settles.
-  const skeletons = useMemo(() => toSkeletons(elements), [elements]);
-  const key = useMemo(() => JSON.stringify(skeletons), [skeletons]);
+  // Recompute only when the content changes, not on every parent render, so
+  // the canvas is not reset while the user draws.
+  const signature = JSON.stringify(elements ?? []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const skeletons = useMemo(() => toSkeletons(elements), [signature]);
   const h = Math.min(Math.max(typeof height === "number" ? height : 420, 200), 900);
   return (
     <div>
       {title ? <div style={{ fontWeight: 600, marginBottom: 8 }}>{title}</div> : null}
       <Suspense fallback={<div style={{ height: h }}>Loading whiteboard…</div>}>
-        <WhiteboardCanvas key={key} skeletons={skeletons} height={h} />
+        <WhiteboardCanvas skeletons={skeletons} height={h} />
       </Suspense>
     </div>
   );
