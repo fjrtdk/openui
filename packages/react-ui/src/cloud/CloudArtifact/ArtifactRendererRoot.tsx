@@ -87,8 +87,9 @@ export interface ArtifactRendererBaseProps {
   actions?: ReactNode;
   /**
    * How often the artifact checks for a newer version, a rename or an access change, in ms
-   * (at least 3s), while its `Content` slot is mounted. A newer version replaces the one on screen; a deleted or unshared artifact
-   * shows an error. Hidden tabs don't check. `false`: never. Default: `OpenUICloudProvider`'s
+   * (at least 3s), while the renderer is open: a standalone one always is, a card once opened.
+   * A newer version replaces the one on screen; a deleted or unshared artifact shows an error.
+   * Hidden tabs don't check. `false`: never. Default: `OpenUICloudProvider`'s
    * `pollInterval`, else 30s.
    */
   pollInterval?: number | false;
@@ -242,18 +243,14 @@ export function ArtifactRendererRoot({
   const close = useCallback(() => setOpen(false), [setOpen]);
   const showsContent = !preview || (isOpen && renderInHtmlElement !== null);
 
-  // Checks for changes only while a `Content` slot shows the artifact.
-  const [mountedContent, setMountedContent] = useState(0);
-  const mountContent = useCallback(() => {
-    setMountedContent((count) => count + 1);
-    return () => setMountedContent((count) => count - 1);
-  }, []);
   const appPollInterval = useArtifactPollInterval();
   const stream = useArtifactStream({
     id,
     version: reference?.version,
     content,
-    pollInterval: mountedContent > 0 && (pollInterval ?? appPollInterval ?? DEFAULT_POLL_INTERVAL),
+    // Only while the renderer is open: a standalone one always is, a card once opened.
+    pollInterval:
+      (!preview || isOpen) && (pollInterval ?? appPollInterval ?? DEFAULT_POLL_INTERVAL),
   });
 
   // A delete, rename or access change from the lists or another renderer's stream
@@ -411,7 +408,6 @@ export function ArtifactRendererRoot({
   const contentConfig = useMemo<ContentConfig>(
     () => ({
       isEmpty: !program,
-      mount: mountContent,
       render: () =>
         renderContent({
           program,
@@ -431,7 +427,6 @@ export function ArtifactRendererRoot({
       rendererKey,
       handleRendererErrors,
       renderContent,
-      mountContent,
     ],
   );
 

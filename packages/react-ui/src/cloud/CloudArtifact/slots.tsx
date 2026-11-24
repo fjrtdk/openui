@@ -3,7 +3,7 @@
 import type { ArtifactBuildStep } from "@openuidev/react-headless";
 import clsx from "clsx";
 import { LoaderCircle, X } from "lucide-react";
-import { useContext, useEffect, useMemo, type ReactNode } from "react";
+import { useContext, useMemo, type ReactNode } from "react";
 import { Button } from "../../components/Button";
 import { IconButton } from "../../components/IconButton";
 import { AnimatedLabel } from "./AnimatedLabel";
@@ -256,9 +256,6 @@ export function CloseButton({ label, children }: CloseButtonProps) {
 export function Content({ className, children }: PartProps) {
   const inside = useInRegion("chrome");
   const config = useContext(ContentConfigContext);
-  // The artifact checks for changes only while its content is on screen.
-  const mount = inside ? config?.mount : undefined;
-  useEffect(() => mount?.(), [mount]);
   if (!inside || !config) return null;
   return (
     <RegionProvider region="content">
