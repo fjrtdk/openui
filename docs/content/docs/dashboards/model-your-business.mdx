@@ -87,64 +87,35 @@ export const dashboards = openui.defineDashboard({
 
 ## Groups
 
-Groups decide who can open a dashboard. OpenUI matches a group [share](/docs/dashboards/sharing) against the `groupIds` you pass, and never stores who's in a group. Good groups make your Share dialog match how people already work together.
+Groups decide who can open a dashboard. OpenUI matches a group [share](/docs/dashboards/sharing) against the `groupIds` you pass, and never stores who's in a group.
 
 ### What to include
 
-- **The units people already share with**: teams, departments, offices, the whole company. If people say "send it to the sales team", the sales team is a group.
-- **Every level above the user.** A share with a department reaches its teams only if each user carries both their team and its department. OpenUI doesn't know one contains the other.
-- **One group for everyone**, such as `company:<companyId>`, since there's no built-in share for everyone.
-- **Groups that last as long as dashboards do.** A group for a week-long project leaves shares that stop reaching anyone.
-
-For example, Maya is on team East (`team:t_81`) in Sales (`dept:d_7`) at Acme (`company:c_42`). Her `groupIds` hold all three, so a dashboard shared with any of them reaches her.
+- **The units people already share with**: teams, departments, the whole company.
+- **Every level above the user**, so a share with a department reaches its teams. Maya, on team East in Sales at Acme, gets `team:t_81`, `dept:d_7`, and `company:c_42`.
+- **One group for everyone**, such as `company:<companyId>`. There's no built-in share for everyone.
 
 ### What to leave out
 
-- **Permissions and feature flags**, such as `admin` or `can_export`. Nobody shares with them, and they use up the 10.
-- **Roles nobody shares with.** "All managers" can be a good group. "Viewer" isn't.
-- **Groups meant to limit data.** A group share opens the dashboard. Which data it shows is up to your tools and each viewer's `context`.
-- **Single-person groups.** Share with the user instead.
+- **Permissions, feature flags, and roles nobody shares with.** They use up the 10.
+- **Groups meant to limit data.** A share opens the dashboard; your tools decide which data it shows.
 
-### How to write ids
+### Ids
 
-- **Use stable ids, not names.** `team:t_81` survives a rename; `team:Sales East` doesn't. Your Share dialog looks the names up in your own data.
-- **Prefix ids by kind**, such as `team:`, `dept:`, and `company:`, so ids from different tables never collide.
-- **Stay within the limits**: up to 10 groups per user, each id up to 64 characters. If users often have more than 10, your groups are too fine. Use the level above.
-
-### Apps that serve many companies
-
-Group and user ids are matched across your whole app. If two companies both have a team called `sales`, `team:sales` is one group to OpenUI.
-
-For example, Maya at Acme shares a dashboard with `team:sales`. Jordan at Globex is also in `team:sales`, so the dashboard shows up in his list. He sees its title and layout, and runs it with his own data.
-
-- Use group ids that are unique across companies, such as database ids, or prefix them with the company: `acme:team:sales`.
-- Share with everyone at a company through `company:<companyId>`. Never give every company the same `everyone` group.
-- User ids must be unique across companies too.
+- Use stable ids prefixed by kind, such as `team:t_81`, never names, which change.
+- A user can be in up to 10 groups, and each id is up to 64 characters.
+- If your app serves many companies, ids must be unique across them: `team:sales` at two companies is one group to OpenUI. Use database ids or prefix them with the company, and never give every company the same `everyone` group. The same goes for user ids.
 
 ### Provide them
 
-Build the list in one function, in a fixed order, so the same groups are cut every time a user has more than 10:
-
 ```ts title="lib/groups.ts"
-const MAX_GROUPS = 10;
-
 export function groupsFor(user: User): string[] {
   return [
     `company:${user.companyId}`,
     ...user.departmentIds.toSorted().map((id) => `dept:${id}`),
     ...user.teamIds.toSorted().map((id) => `team:${id}`),
-  ].slice(0, MAX_GROUPS);
+  ].slice(0, 10); // a fixed order, so the same groups are cut every time
 }
 ```
 
-Pass it as `groupIds` everywhere you pass `userId`: on the frontend token and in every server call's `context`.
-
-```ts
-const groupIds = groupsFor(session.user);
-
-await openui.createFrontendToken({ userId: session.user.id, groupIds });
-await dashboards.interpreter.execute(request, { userId: session.user.id, groupIds });
-```
-
-- A user removed from a group keeps its dashboards until their next frontend token, up to 15 minutes. Server calls use the `groupIds` you pass, so they change at once.
-- OpenUI doesn't check that a share target exists. In your Share dialog, offer the user's own groups and the people at their company, with names from your data.
+Pass the result as `groupIds` everywhere you pass `userId`: on the frontend token and in every server call's `context`. A change reaches the browser with the user's next token, within 15 minutes.
