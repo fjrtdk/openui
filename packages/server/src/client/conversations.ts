@@ -11,9 +11,11 @@ import {
 import type {
   CloudConversation,
   ConversationItem,
+  ConversationItemInput,
   ConversationItems,
   ConversationMetadata,
   Conversations,
+  MessageConversations,
 } from "./types";
 
 /** A conversation as OpenUI Cloud sends it: snake_case, times in unix seconds. */
@@ -128,5 +130,38 @@ export function createConversations(api: CloudApi): Conversations {
     },
 
     items: createItems(api),
+  };
+}
+
+/**
+ * `conversations`, with items taken as one SDK's messages and read back as them. The
+ * conversation calls are the same ones.
+ */
+export function withMessages<Input, Output>(
+  conversations: Conversations,
+  toItems: (messages: readonly Input[]) => ConversationItemInput[],
+  fromItems: (items: ConversationItem[]) => Output[],
+): MessageConversations<Input, Output> {
+  const { items, ...rest } = conversations;
+  return {
+    ...rest,
+    items: {
+      async create(id, messages, options) {
+        if (!Array.isArray(messages)) invalidInput("messages must be an array");
+        return items.create(id, toItems(messages), options);
+      },
+
+      // Every page, since a reply's text and its tool calls can sit on either side of one.
+      async list(id, options = {}) {
+        const thread: ConversationItem[] = [];
+        let after: string | undefined;
+        do {
+          const page = await items.list(id, { ...options, order: "asc", limit: 100, after });
+          thread.push(...page.data);
+          after = page.hasMore ? page.lastId : undefined;
+        } while (after);
+        return fromItems(thread);
+      },
+    },
   };
 }

@@ -281,13 +281,18 @@ Thrown errors include a `code` string:
 
 ## Conversation history
 
+<Callout type="warn">
+  Deprecated: use [`openui.chat.conversations` or
+  `openui.langgraph.conversations`](/docs/gateway/conversations-from-server#chat-completions-and-langgraph-messages),
+  which store a turn and read a thread back as one of your users. These helpers still work, as your
+  org.
+</Callout>
+
 Persist only the new turn — not the full `messages` array — or items will be duplicated. Use the master API key. System and developer messages are skipped.
 
 A tool call is stored only together with its result, so a turn stopped mid tool call is saved without that call and the thread stays valid for the next request.
 
-To store a turn as one of your users, and check the conversation is theirs, pass these items to [`openui.conversations.items.create`](/docs/gateway/conversations-from-server) with their `userId`.
-
-### `storeChatCompletionHistory(options)`
+### `storeChatCompletionHistory(options)` (deprecated)
 
 ```ts
 import { storeChatCompletionHistory } from "@openuidev/server/openai";
@@ -314,7 +319,7 @@ function storeChatCompletionHistory(options: {
 
 It stores with `openui.conversations.items.create` as your org, so a failed write throws `OpenUIApiError` with a `code` and the HTTP `status`.
 
-### `chatCompletionMessagesToItems(messages)`
+### `chatCompletionMessagesToItems(messages)` (deprecated)
 
 Convert Chat Completions messages to Conversations API items without posting.
 
@@ -332,7 +337,7 @@ chatCompletionMessagesToItems([
 | Entry point                | Export                              | Description                                            |
 | :------------------------- | :---------------------------------- | :----------------------------------------------------- |
 | `@openuidev/server/openai` | `createAutofix`                     | Chat Completions Autofix: `completions.fix` / `stream` |
-| `@openuidev/server/openai` | `storeChatCompletionHistory`        | Persist a Chat Completions turn                        |
-| `@openuidev/server/openai` | `chatCompletionMessagesToItems`     | Convert messages to Conversations API items            |
+| `@openuidev/server/openai` | `storeChatCompletionHistory`        | Deprecated: persist a Chat Completions turn            |
+| `@openuidev/server/openai` | `chatCompletionMessagesToItems`     | Deprecated: convert messages to items                  |
 | `@openuidev/server/openai` | `StoreChatCompletionHistoryOptions` | History helper configuration                           |
 | `@openuidev/server/vercel` | `createAutofix`                     | Vercel AI SDK Autofix: `ai.fix` / `ai.stream`          |

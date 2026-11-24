@@ -1,17 +1,21 @@
 import type { ExecutionContext } from "../tools/types";
 import { createCloudApi, type CloudApi } from "./api";
 import { createArtifacts } from "./artifacts";
-import { createConversations } from "./conversations";
+import { chatMessagesToItems, itemsToChatMessages } from "./chat";
+import { createConversations, withMessages } from "./conversations";
 import { defineDashboard } from "./dashboard";
 import { createFrontendToken } from "./frontend-token";
+import { chatToLangGraphMessages, langGraphToChatMessages } from "./langgraph";
 import {
   OpenUIApiError,
   type Artifacts,
+  type ChatConversations,
   type Conversations,
   type CreateFrontendTokenParams,
   type Dashboard,
   type DashboardOptions,
   type FrontendToken,
+  type LangGraphConversations,
   type OpenUIClientOptions,
   type RequestOptions,
 } from "./types";
@@ -35,6 +39,19 @@ export class OpenUIClient {
    */
   readonly conversations: Conversations;
 
+  /**
+   * `conversations`, in Chat Completions messages: `items.create` takes them, and
+   * `items.list` reads a whole thread back as them. Types come from `openai`.
+   */
+  readonly chat: { readonly conversations: ChatConversations };
+
+  /**
+   * `conversations`, in LangGraph's messages: `items.create` takes LangChain messages, and
+   * `items.list` reads a whole thread back as messages `graph.invoke` takes. Types come
+   * from `@langchain/core`.
+   */
+  readonly langgraph: { readonly conversations: LangGraphConversations };
+
   constructor(options: OpenUIClientOptions = {}) {
     if (
       options.appId !== undefined &&
@@ -45,6 +62,16 @@ export class OpenUIClient {
     this.api = createCloudApi(options);
     this.artifacts = createArtifacts(this.api);
     this.conversations = createConversations(this.api);
+    this.chat = {
+      conversations: withMessages(this.conversations, chatMessagesToItems, itemsToChatMessages),
+    };
+    this.langgraph = {
+      conversations: withMessages(
+        this.conversations,
+        (messages) => chatMessagesToItems(langGraphToChatMessages(messages)),
+        (items) => chatToLangGraphMessages(itemsToChatMessages(items)),
+      ),
+    };
   }
 
   /** Defines live dashboards from your library and data tools; its `interpreter` runs them. */

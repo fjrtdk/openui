@@ -104,58 +104,38 @@ Use either `chunks` or `toResponse()` once. `result` settles after that consumer
 
 ## Conversation history
 
-Persist a Chat Completions turn as Conversations API items. Pass only the new turn —
-last user message plus the assembled assistant reply — not the full `messages` array.
-Use the master API key.
-
-A tool call is stored only together with its result, in the tool messages right after
-it. A turn stopped mid tool call is saved without that call, so the thread stays valid
-for the next request.
+Store each turn in an OpenUI Cloud conversation, and read the thread back for the next
+request, in your SDK's messages. Use the API key on your server; pass `userId` to act as
+that user, so a thread id from the browser 404s unless it's theirs.
 
 ```ts
-import { storeChatCompletionHistory } from "@openuidev/server/openai";
+import { OpenUIClient } from "@openuidev/server";
 
-await storeChatCompletionHistory({
-  apiKey: process.env.THESYS_API_KEY!,
-  conversationId: threadId,
-  messages: [
+const openui = new OpenUIClient(); // reads THESYS_API_KEY
+
+// The thread so far, oldest first, as Chat Completions messages.
+const history = await openui.chat.conversations.items.list(threadId, { userId });
+
+// Store only the new turn: earlier messages are already there.
+await openui.chat.conversations.items.create(
+  threadId,
+  [
     { role: "user", content: lastUserText },
     { role: "assistant", content: assistantText },
   ],
-});
+  { userId },
+);
 ```
 
-Convert without posting:
+`openui.langgraph.conversations` does the same with LangChain messages: `items.create`
+takes `BaseMessage`s, and `items.list` returns `{ role, content }` messages that
+`graph.invoke({ messages })` takes. Their conversation calls (`list`, `create`, `get`,
+`update`, `delete`) are `openui.conversations`' own.
 
-```ts
-import { chatCompletionMessagesToItems } from "@openuidev/server/openai";
+System and developer messages are skipped. A tool call is stored only together with its
+result, so a turn stopped mid tool call leaves the thread valid for the next request.
+Types come from the optional `openai` and `@langchain/core` peers: install the one you use.
 
-chatCompletionMessagesToItems([
-  { role: "user", content: "hello" },
-  { role: "assistant", content: "hi" },
-]);
-```
-
-### LangGraph
-
-Import `storeLangGraphHistory` from `@openuidev/server/langgraph`. Pass completed
-`BaseMessage` instances from `@langchain/core/messages`, the message types used
-by LangGraph. This entry point requires the optional `@langchain/core` peer
-dependency; other server entry points do not.
-
-```ts
-import { storeLangGraphHistory } from "@openuidev/server/langgraph";
-
-await storeLangGraphHistory({
-  apiKey: process.env.THESYS_API_KEY!,
-  conversationId: threadId,
-  messages: newTurnMessages,
-});
-```
-
-Store only the new turn, including tool calls and results. Passing the full
-replayed history or individual streaming chunks creates duplicate items.
-The conversation must already exist. System/developer instructions are skipped;
-text and user `image_url` blocks are supported. Use `langGraphMessagesToItems`
-for conversion without a network request. `apiBaseUrl` and `fetch` work as in
-`storeChatCompletionHistory`; storage failures reject the returned promise.
+`storeChatCompletionHistory` and `chatCompletionMessagesToItems` from
+`@openuidev/server/openai`, and `storeLangGraphHistory` and `langGraphMessagesToItems`
+from `@openuidev/server/langgraph`, are deprecated: they still work, as your org.

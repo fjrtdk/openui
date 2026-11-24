@@ -1,4 +1,6 @@
+import type { BaseMessage, MessageContent, ToolCall } from "@langchain/core/messages";
 import type { CloudPromptOptions, LibrarySpec } from "@openuidev/lang-core";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { McpServers } from "../tools/mcp";
 import type { DataTool, ExecutionContext, Interpreter } from "../tools/types";
 
@@ -327,9 +329,9 @@ export interface ConversationFunctionCallOutputInput {
 }
 
 /**
- * An item to add, in OpenAI's Conversations API shape. `chatCompletionMessagesToItems()`
- * from `@openuidev/server/openai` makes them from Chat Completions messages, and an item
- * read back can be added as is. Other OpenAI item types, such as `reasoning`, are checked
+ * An item to add, in OpenAI's Conversations API shape. An item read back can be added as
+ * is; to add Chat Completions or LangGraph messages, use `openui.chat.conversations` or
+ * `openui.langgraph.conversations`. Other OpenAI item types, such as `reasoning`, are checked
  * by OpenUI Cloud.
  */
 export type ConversationItemInput =
@@ -452,6 +454,44 @@ export interface Conversations {
   delete(id: string, options?: ConversationRequestOptions): Promise<void>;
   readonly items: ConversationItems;
 }
+
+/** A conversation's items as one SDK's messages. */
+export interface MessageConversationItems<Input, Output> {
+  /**
+   * Converts the messages to items and adds them in order, then resolves with the items as
+   * stored. Add only the new turn: earlier messages are already there.
+   */
+  create(
+    id: string,
+    messages: readonly Input[],
+    options?: ConversationRequestOptions,
+  ): Promise<ConversationItem[]>;
+  /** The whole thread as messages, oldest first, ready to send to the model. */
+  list(id: string, options?: ConversationRequestOptions): Promise<Output[]>;
+}
+
+/** `openui.conversations`, with items taken and read back as one SDK's messages. */
+export interface MessageConversations<Input, Output> extends Omit<Conversations, "items"> {
+  readonly items: MessageConversationItems<Input, Output>;
+}
+
+/** Conversations whose items are Chat Completions messages. */
+export type ChatConversations = MessageConversations<
+  ChatCompletionMessageParam,
+  ChatCompletionMessageParam
+>;
+
+/**
+ * A stored message, as LangGraph takes it: pass these to `graph.invoke({ messages })`, whose
+ * reducer turns them into LangChain messages.
+ */
+export type LangGraphHistoryMessage =
+  | { role: "human"; content: MessageContent }
+  | { role: "ai"; content: string; tool_calls?: ToolCall[] }
+  | { role: "tool"; content: string; tool_call_id: string };
+
+/** Conversations whose items are LangGraph's LangChain messages. */
+export type LangGraphConversations = MessageConversations<BaseMessage, LangGraphHistoryMessage>;
 
 /** Failures from the OpenUI Cloud API expose a stable code and the HTTP status. */
 export class OpenUIApiError extends Error {

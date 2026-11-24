@@ -2,6 +2,7 @@ export { OpenUIClient } from "./client/client";
 export { OpenUIApiError } from "./client/types";
 export type {
   ArtifactShareTarget,
+  ChatConversations,
   CloudArtifact,
   CloudArtifactList,
   CloudArtifactShare,
@@ -16,9 +17,13 @@ export type {
   ConversationMetadata,
   Dashboard,
   DashboardOptions,
+  LangGraphConversations,
+  LangGraphHistoryMessage,
   ListArtifactsParams,
   ListConversationItemsParams,
   ListConversationsParams,
+  MessageConversationItems,
+  MessageConversations,
   OpenUIClientOptions,
   ShareArtifactParams,
 } from "./client/types";
