@@ -19,8 +19,9 @@ export interface ArtifactCall {
 
 /**
  * OpenUI Cloud's config block for an artifact: lang-core writes the library
- * part (`chatLibrary`, `systemPromptOptions`) and your instructions after it,
- * and each call adds its own under `artifact`: data tools, title and edit target.
+ * part (`chatLibrary`, `systemPromptOptions`), and each call adds its own
+ * under `artifact`: data tools, title and edit target. Your instructions
+ * follow the block as prose.
  */
 export function artifactConfig(
   library: LibrarySpec,
@@ -32,17 +33,13 @@ export function artifactConfig(
     cloud: true,
     library,
     ...(promptOptions && { promptOptions }),
-    ...(instructions && { instructions }),
   });
   if (!block.startsWith(CONFIG_MARKER)) {
     throw new Error("lang-core returned an unexpected config block");
   }
-  // The config is one line of JSON; the instructions follow it as prose.
-  const body = block.slice(CONFIG_MARKER.length);
-  const end = body.indexOf("\n");
-  const json = end === -1 ? body : body.slice(0, end);
-  const prose = end === -1 ? "" : body.slice(end);
-  const base = JSON.parse(json) as Record<string, unknown>;
+  const base = JSON.parse(block.slice(CONFIG_MARKER.length)) as Record<string, unknown>;
+  // Where lang-core's `instructions` would put them: after the block.
+  const prose = instructions ? `\n${instructions}` : "";
 
   return (artifact: ArtifactCall): string =>
     CONFIG_MARKER + JSON.stringify({ ...base, artifact }) + prose;
