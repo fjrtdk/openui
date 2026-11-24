@@ -44,7 +44,7 @@ await dashboards.edit({ id, prompt }, { userId: session.user.id, groupIds });
 
 Group ids are strings you choose, such as `team:sales` or an account id. A user can be in up to 10 groups, a dashboard can be shared with up to 10 groups, and the user and group ids you share with are up to 64 characters. OpenUI doesn't check that a user or group exists.
 
-To share with everyone, put every user in one group, such as `everyone`, and share with that group.
+To share with everyone, put every user in one group and share with it: `everyone`, or `company:<id>` if your app serves many companies. See [Model your business](/docs/dashboards/model-your-business#groups) for choosing groups.
 
 Groups ride on the frontend token, which lasts 15 minutes. A user you remove from a group keeps that group's dashboards until their next token. Removing a share takes effect on the next request, and unpins the dashboard for users who pinned it only through that share.
 
