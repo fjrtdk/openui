@@ -84,3 +84,18 @@ export const dashboards = openui.defineDashboard({
   instructions: businessContext,
 });
 ```
+
+### Checklist
+
+Check that your business context:
+
+- [ ] Says what the business does, who reads the dashboards, and what they decide.
+- [ ] Defines the terms your users type, especially ones you use differently from most.
+- [ ] Gives each key metric its calculation, the tool that answers it, and what good looks like.
+- [ ] States the fiscal year, time zone, currency, and rounding.
+- [ ] Names the dimensions people compare by, such as regions and segments.
+- [ ] Sets defaults: the time range, comparison, and lead metrics.
+- [ ] Only defines metrics your tools can produce.
+- [ ] Has nothing about one user, no secrets or personal data, and no current numbers.
+- [ ] Is one fact per line, in your users' words.
+- [ ] Leads to the right period and metrics for vague prompts, such as "How's this quarter going?"
