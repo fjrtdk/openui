@@ -27,14 +27,14 @@ export const dashboards = openui.defineDashboard({
 
 Define it once and import `dashboards` wherever the app creates, edits, or loads dashboards.
 
-| Option          | Description                                                                                                                                                              |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `library`       | The component library's spec. See [Component library](#component-library).                                                                                               |
-| `model`         | The model that builds and edits dashboards, as `provider/model`. Recommended: `anthropic/claude-sonnet-5.5`. See [Models](/docs/gateway/models).                         |
-| `tools`         | Your data tools. See [Connect data](/docs/dashboards/connect-data).                                                                                                      |
-| `mcp`           | One or more MCP servers whose tools dashboards can call. See [Connect data](/docs/dashboards/connect-data#mcp-servers).                                                  |
-| `instructions`  | Your business: what it does, who reads the dashboards, your terms, calendar and units. See [Model your business](/docs/dashboards/model-your-business#business-context). |
-| `promptOptions` | `preamble`, `examples`, and `additionalRules` added to the prompt the model builds dashboards from.                                                                      |
+| Option          | Description                                                                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `library`       | The component library's spec. See [Component library](#component-library).                                                                                     |
+| `model`         | The model that builds and edits dashboards, as `provider/model`. Recommended: `anthropic/claude-sonnet-5.5`. See [Models](/docs/gateway/models).               |
+| `tools`         | Your data tools. See [Connect data](/docs/dashboards/connect-data).                                                                                            |
+| `mcp`           | One or more MCP servers whose tools dashboards can call. See [Connect data](/docs/dashboards/connect-data#mcp-servers).                                        |
+| `instructions`  | Your business: what it does, who reads the dashboards, your terms, calendar and units. See [Best practices](/docs/dashboards/best-practices#business-context). |
+| `promptOptions` | `preamble`, `examples`, and `additionalRules` added to the prompt the model builds dashboards from.                                                            |
 
 `tools`, `mcp`, or both are required.
 
@@ -82,7 +82,7 @@ Passing the JSON spec keeps the React components out of the server. `library.toS
 
 `promptOptions` adds to the prompt the model builds dashboards from:
 
-- `preamble`: kept for existing apps. Use [`instructions`](/docs/dashboards/model-your-business#business-context) instead.
+- `preamble`: kept for existing apps. Use [`instructions`](/docs/dashboards/best-practices#business-context) instead.
 - `examples`: example dashboards in OpenUI Lang. `@openuidev/dashboard-library` exports a set as `promptOptions.examples`.
 - `additionalRules`: extra rules for the model. The library exports its own as `promptOptions.additionalRules`.
 

@@ -1,0 +1,44 @@
+---
+title: Best Practices
+description: Tell the model about your business, so dashboards use the right metrics, periods, and words.
+---
+
+## Business context
+
+The model knows your data tools, but not your business. Business context tells it what your terms mean, which period "this quarter" is, and which numbers matter.
+
+### What to include
+
+- **What the business does**, and who reads the dashboards.
+- **Your terms**, especially ones you use differently from most: "Logos are customer accounts."
+- **Key metrics**: how each is calculated, which tool answers it, and what good looks like, such as "Churn above 2% a month is a concern."
+- **Calendar and units**: fiscal year, time zone, currency, and rounding.
+- **Defaults**: the time range and comparison to use when a prompt doesn't say.
+
+### What to leave out
+
+- **Anything about one user**, such as their name or team. Dashboards get shared, so scope each viewer's data in your tools with [`context`](/docs/dashboards/connect-data#use-the-context).
+- **What one tool returns.** Put it in the tool's `description`.
+- **Current numbers.** They go stale; your tools return them.
+- **Secrets and personal data.**
+
+### How to write it
+
+- **Facts, one per line**, in your users' words: "The fiscal year starts on February 1", not "Be careful with dates."
+- **Only define metrics your tools can produce.** Otherwise the model tries to show a number it can't compute.
+- **Test it with vague prompts**, such as "How's this quarter going?". When the model picks the wrong metric or period, add the fact it was missing.
+
+### Provide it
+
+Pass it as `instructions` to `defineDashboard`. It's sent with every `create` and `edit`.
+
+```ts title="lib/openui.ts"
+import { businessContext } from "./business-context"; // your context, as a string
+
+export const dashboards = openui.defineDashboard({
+  library: spec,
+  model: "anthropic/claude-sonnet-5.5",
+  tools: dataTools,
+  instructions: businessContext,
+});
+```
