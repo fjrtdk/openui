@@ -30,18 +30,7 @@ The model knows your data tools, but not your business. Business context tells i
 
 ### Provide it
 
-Pass it as `instructions` to `defineDashboard`. It's sent with every `create` and `edit`.
-
-```ts title="lib/openui.ts"
-import { businessContext } from "./business-context"; // your context, as a string
-
-export const dashboards = openui.defineDashboard({
-  library: spec,
-  model: "anthropic/claude-sonnet-5.5",
-  tools: dataTools,
-  instructions: businessContext,
-});
-```
+Pass it as `instructions` to [`defineDashboard`](/docs/dashboards/define-dashboards). It's sent with every `create` and `edit`.
 
 ## Your agent
 
