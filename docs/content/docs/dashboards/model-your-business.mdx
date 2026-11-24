@@ -1,6 +1,6 @@
 ---
 title: Model your business
-description: Give the model your business's context, and model the groups your users share dashboards with.
+description: Tell the model about your business, so dashboards use the right metrics, periods, and words.
 ---
 
 ## Business context
@@ -84,38 +84,3 @@ export const dashboards = openui.defineDashboard({
   instructions: businessContext,
 });
 ```
-
-## Groups
-
-Groups decide who can open a dashboard. OpenUI matches a group [share](/docs/dashboards/sharing) against the `groupIds` you pass, and never stores who's in a group.
-
-### What to include
-
-- **The units people already share with**: teams, departments, the whole company.
-- **Every level above the user**, so a share with a department reaches its teams. Maya, on team East in Sales at Acme, gets `team:t_81`, `dept:d_7`, and `company:c_42`.
-- **One group for everyone**, such as `company:<companyId>`. There's no built-in share for everyone.
-
-### What to leave out
-
-- **Permissions, feature flags, and roles nobody shares with.** They use up the 10.
-- **Groups meant to limit data.** A share opens the dashboard; your tools decide which data it shows.
-
-### Ids
-
-- Use stable ids prefixed by kind, such as `team:t_81`, never names, which change.
-- A user can be in up to 10 groups, and each id is up to 64 characters.
-- If your app serves many companies, ids must be unique across them: `team:sales` at two companies is one group to OpenUI. Use database ids or prefix them with the company, and never give every company the same `everyone` group. The same goes for user ids.
-
-### Provide them
-
-```ts title="lib/groups.ts"
-export function groupsFor(user: User): string[] {
-  return [
-    `company:${user.companyId}`,
-    ...user.departmentIds.toSorted().map((id) => `dept:${id}`),
-    ...user.teamIds.toSorted().map((id) => `team:${id}`),
-  ].slice(0, 10); // a fixed order, so the same groups are cut every time
-}
-```
-
-Pass the result as `groupIds` everywhere you pass `userId`: on the frontend token and in every server call's `context`. A change reaches the browser with the user's next token, within 15 minutes.
