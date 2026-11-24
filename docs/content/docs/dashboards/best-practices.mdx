@@ -1,6 +1,6 @@
 ---
 title: Best Practices
-description: Tell the model about your business, so dashboards use the right metrics, periods, and words.
+description: Give the dashboard model your business context, and help your agent write good dashboard prompts.
 ---
 
 ## Business context
@@ -42,3 +42,36 @@ export const dashboards = openui.defineDashboard({
   instructions: businessContext,
 });
 ```
+
+## Your agent
+
+Your agent, the model your users chat with, decides when to make a dashboard and writes its prompt. The dashboard model never sees the conversation: only that prompt, your `instructions`, and your data tools. Start from the system prompt in [Add to your agent](/docs/dashboards/add-to-your-agent#instruct-the-agent), and make sure it covers the points below.
+
+### What to tell it
+
+- **What dashboards can show.** List your data tools, one line each, so it turns down requests they can't answer instead of making an empty dashboard.
+- **When to make one**: when the user wants to track, compare, or explore numbers. Otherwise, reply in text.
+- **Edit, don't recreate.** A change to an open dashboard goes to `edit_dashboard` with its id. Make a new one only when asked.
+- **It can't see the data.** It can say what a dashboard shows, but not the numbers in it.
+- **Keep replies short.** The user watches the dashboard build, so one or two sentences are enough.
+
+### How it should write the prompt
+
+The prompt is the dashboard model's whole brief, so it has to stand on its own:
+
+- **Resolve the conversation.** Replace "that account" or "like before" with the actual names, filters, and periods.
+- **Start with the question behind it**, such as "Is the team on track for the quarter?", so the model knows what to lead with.
+- **Name what to show**: metrics, breakdowns, time range, comparisons, and the filters people can change.
+- **Write "the viewer's team", not a person's name**, unless the user means one team by name. The dashboard gets shared, and your tools scope it to whoever opens it.
+- **No numbers.** The dashboard loads them through your tools. Include data only when your tools can't fetch it, such as a list the user pasted.
+- **Leave out your business context.** `instructions` already carries it.
+- **Give it a short, specific title**, such as "Q4 pipeline by region". Users see it in their lists.
+
+| Weak                                     | Better                                                                                                                                                                                   |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Make the sales dashboard we discussed." | "Is the viewer's team on track this fiscal quarter? Lead with open pipeline against last quarter, then pipeline by stage and the 10 largest open deals. Add region and segment filters." |
+
+### Edits
+
+- **One change per edit**, described against what's there: "Add a table of the 10 largest open deals below the stage chart."
+- **For a dashboard from an earlier chat**, call `get_dashboard` first to see its layout and whether `isEditable` is true. If it isn't, the user can only view it, so make a new one instead.
